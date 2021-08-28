@@ -20,20 +20,34 @@ enum {ESTA = 1, DEPO, WITHD, PRTA, EXIT};
 
 class Account{
 private:
-	int id = 0;
+	int id;
 	char* name;
-	int amount = 0;
+	int amount;
 public:
-	Account () //int id, char* name, int amount) 
-		// : id(id), name(name), amount(amount)
+	Account ()
+		: id(0), name(NULL), amount(0)  // 함수 오버로딩
+	{}
+	Account (int id, char* name, int amount) 
+		: id(id), name(name), amount(amount) // 멤버 이니셜라이저에서는 this 포인터를 사용할 수 없지만, 보다시피 굳이 사용할 필요가 없다.
+	{}
+
+	void setID(int id) { this->id = id; } // this 포인터를 사용해 객체의 멤버변수와, 멤버함수의 매개변수를 달리 함.
+	void setNAME(char* name) { this->name = name; }
+	void setAMOUNT(int amount) { this->amount = amount; }
+
+	int getID(void) const { return id; }
+	char* getNAME(void) const { return name; }
+	int getAMOUNT(void) const { return amount; }
+
+	~Account ()
 	{
-		
+		cout << "called destructor!!" << endl;
 	}
 };
 
-Account* Acc = new Account[MAX_LENGHT];
+Account* acc[MAX_LENGHT]; // struct를 class로 바꾸면서 구조체 배열에서 객체 포인터 배열로 변경.. 
 
-int ele = 1;
+static int ele = 1; // 정적 전역변수.. 현재 소스파일에서만 제한적으로 사용하게 됨.
 
 int main(void)
 {
@@ -78,10 +92,15 @@ void prtMenu(void)
 
 void estAcc(void)
 {
+	int id = 0;
+	char* name = NULL;
+	int amount = 0;
+
 	cout << "[계좌개설]" << endl;
-	cout << "계좌ID: "; cin >> Acc[ele].id;
-	cout << "이 름: "; cin >> Acc[ele].name;
-	cout << "입금액: "; cin >> Acc[ele].amount;
+	cout << "계좌ID: "; cin >> id;
+	cout << "이 름: "; cin >> name;
+	cout << "입금액: "; cin >> amount;
+	acc[ele] = new Account(id, name, amount);
 	ele++;
 }
 
@@ -94,7 +113,7 @@ void depo(void)
 	cout << "입금액: "; cin >> tmp_amount;
 	
 	for(int i = 1; i <= ele; i++){
-		if(tmp_Accid == Acc[i].id){
+		if(tmp_Accid == acc[i]->id();){
 			Acc[i].amount += tmp_amount;
 			cout << "입금완료" << endl;
 			
