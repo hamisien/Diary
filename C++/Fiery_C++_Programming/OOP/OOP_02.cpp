@@ -6,6 +6,7 @@
  */
 
 #include <iostream>
+#include <cstring>
 #define MAX_LENGHT 255
 
 using namespace std;
@@ -27,9 +28,14 @@ public:
 	Account ()
 		: id(0), name(NULL), amount(0)  // 함수 오버로딩
 	{}
-	Account (int id, char* name, int amount) 
-		: id(id), name(name), amount(amount) // 멤버 이니셜라이저에서는 this 포인터를 사용할 수 없지만, 보다시피 굳이 사용할 필요가 없다.
-	{}
+	Account (int id, const char *name, int amount) 
+		: id(id), amount(amount)/*, name(name) strcpy를 사용하지 않으면 실행 시 Segmentation fault라는 오류가 발생한다. */
+		// 멤버 이니셜라이저에서는 this 포인터를 사용할 수 없지만, 보다시피 굳이 사용할 필요가 없다.
+	{
+		this->name = new char[strlen(name)+1]; // this->name은 자료형이 char이기 때문에 동적할당도 char로 해야 함..
+		strcpy(this->name, name);
+		cout << "Account의 name 값: " << this->name << endl;
+	}
 
 	void setID(int id) { this->id = id; } // this 포인터를 사용해 객체의 멤버변수와, 멤버함수의 매개변수를 달리 함.
 	void setNAME(char* name) { this->name = name; }
@@ -93,7 +99,8 @@ void prtMenu(void)
 void estAcc(void)
 {
 	int id = 0;
-	char* name = NULL;
+	char name[30] = {0, };
+	// char* name = NULL; 이건 안된다.(Segentation fault 발생)
 	int amount = 0;
 
 	cout << "[계좌개설]" << endl;
@@ -113,8 +120,8 @@ void depo(void)
 	cout << "입금액: "; cin >> tmp_amount;
 	
 	for(int i = 1; i <= ele; i++){
-		if(tmp_Accid == acc[i]->id();){
-			Acc[i].amount += tmp_amount;
+		if(tmp_Accid == acc[i]->getID()){
+			acc[i]->setAMOUNT(acc[i]->getAMOUNT() + tmp_amount);
 			cout << "입금완료" << endl;
 			
 			return;
@@ -131,8 +138,8 @@ void withd(void)
 	cout << "출금액: "; cin >> tmp_amount;
 	
 	for(int i = 1; i <= ele; i++){
-		if(tmp_Accid == Acc[i].id){
-			Acc[i].amount -= tmp_amount;
+		if(tmp_Accid == acc[i]->getID()){
+			acc[i]->setAMOUNT(acc[i]->getAMOUNT() - tmp_amount);
 			cout << "출금완료" << endl;
 			
 			return;
@@ -144,8 +151,8 @@ void withd(void)
 void prtAcc(void)
 {
 	for(int i = 1; i < ele; i++){
-		cout << "계좌ID: " << Acc[i].id << endl;
-		cout << "이 름: " << Acc[i].name << endl;
-		cout << "잔 액: " << Acc[i].amount << endl << endl;	
+		cout << "계좌ID: " << acc[i]->getID() << endl;
+		cout << "이 름: " << acc[i]->getNAME() << endl;
+		cout << "잔 액: " << acc[i]->getAMOUNT() << endl << endl;	
 	}
 }
