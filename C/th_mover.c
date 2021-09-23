@@ -20,11 +20,12 @@ int main(void)
                         printf("%s 파일을 여는 데 성공함", f_name);
                     }
 
+	system("mkdir -p mv_tmp");
     while (fgets(f_buff, sizeof(f_buff), fp) != NULL) {
                             
                         delete_nl(f_buff);
                             
-                        sprintf(cmd_buff, "sudo cp \"%s\" mv_tmp/", f_buff);
+                        sprintf(cmd_buff, "sudo cp -v \"%s\" mv_tmp/", f_buff);
                         printf(cmd_buff);
                             
                         system(cmd_buff);
