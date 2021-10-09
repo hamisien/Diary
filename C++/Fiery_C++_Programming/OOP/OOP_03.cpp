@@ -1,6 +1,6 @@
 /*
- * Banking System Ver 0.2
- * OOP 02
+ * Banking System Ver 0.3
+ * OOP 03
  * 작성자: hamisien
  * 내 용: Account 클래스 정의, 객체 포인터 배열 적용
  */
