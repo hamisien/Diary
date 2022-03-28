@@ -9,20 +9,27 @@ void error_handling (const char* msg);
 
 int main(int argc, char* argv[])
 {
-    int sock_clnt;
-    
+    int sock;
+    sock = socket(PF_INET, SOCK_STREAM, 0);
+    if (sock == -1)
+        error_handling ("socket() err");
+
     struct sockaddr_in serv_addr;
 
-    memset(serv_addr, 0, sizeof(serv_addr));
+    char message[30];
+
+    memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = htonl(atoi(argv[1]));
     serv_addr.sin_port = htons(atoi(argv[2]));
 
-    sock_clnt = socket(AF_INET, SOCK_STREAM, 0);
+    if(connect(sock, (struct sockaddr*) &serv_addr, (socklen_t) sizeof(serv_addr)) == -1)
+        error_handling ("connect() err");
 
-    connect(sock_clnt, &serv_addr, (socklen_t) sizeof(serv_addr));
+    if(read(sock, message, sizeof(message)) == -1)
+        error_handling ("read() err");
 
-    read(sock_clnt);
+    fputs(message, stdout);
 
     return 0;
 }
