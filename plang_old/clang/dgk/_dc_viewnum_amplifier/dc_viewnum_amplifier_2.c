@@ -23,7 +23,7 @@ int main(void)
         system("clear");
 
         printf("디시인사이드 조회수 올려주는 프로그램입니다.\n");
-        printf("수능 11일 남았는데 이런 걸 만드네요. C언어도 다 까먹었는데 허허..\n");
+        printf("CENSORED\n");
         printf("요즘 태블릿에 SSH 연결하고 여러가지 하고 있네요. \n지금은 W3M이라는 텍스트기반 웹 브라우저로 디시인사이드 탐험하는 중..\n\n아무키나 누르면 시작합니다..");
         getchar(); //curses.h나 conio.h 등의 헤더파일은 gcc에서 문제가 있는 듯하다. 따라서 stdio.h에서 사용할 수 있는 getchar(); 등장!!
 get_gid:
@@ -85,7 +85,7 @@ re:
         for(sl=0; sl<3; sl++){
         system("clear");
         system("sleep 0.5"); //sleep(0.5);
-        printf("완료 >_< !!\n"); //sleep 사용할 때는 printf("aa"); 에서 aa 뒤에 '\n'가 들어가거나 fflush, getchar 등으로 버퍼 비워줘야 함.
+        printf("CENSORED !!\n"); //sleep 사용할 때는 printf("aa"); 에서 aa 뒤에 '\n'가 들어가거나 fflush, getchar 등으로 버퍼 비워줘야 함.
         system("sleep 0.5"); //sleep(0.5);
         }
 
