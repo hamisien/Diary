@@ -59,6 +59,6 @@ nslookup으로 도메인을 조회해도 클플의 IP 주소가 표시되었다.
 다만 지금 휴대폰이 없어서 결제를 할 수가 없다.
 내일 폰 받으면 보안옵션 추가부터 해야겠다.
 
-기억나는 키워드: clowndora, hamisien, 아파치 로그파일, myactivity.google.com, 톰캣, apache/tomcat 차이, 아파치 가상호스트로 포트별 사이트 운영
+기억나는 키워드: 아파치 로그파일, myactivity.google.com, 톰캣, apache/tomcat 차이, 아파치 가상호스트로 포트별 사이트 운영
 
 추가 정보 → 아파치 웹서버를 설치한 이유는 파이썬 http.server 모듈로 웹 서버를 기동했을 때 Directory listing 페이지에서 날짜별 정렬이 되지 않았기 때문이다.
