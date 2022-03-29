@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
     int sock;
     int read_byte;
     struct sockaddr_in serv_addr;
-    char message[30] = {0,};
+    char message[30] = {0, };
 
     sock = socket(PF_INET, SOCK_STREAM, 0);
     if (sock == -1)
@@ -31,8 +31,10 @@ int main(int argc, char* argv[])
     if(connect(sock, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) == -1)
         error_handling ("connect() err");
 
-    if((read_byte = read(sock, message, sizeof(message)+1)) == -1)
+    if((read_byte = read(sock, message, sizeof(message))) == -1)
         error_handling ("read() err");
+
+    // recv(sock, message, sizeof(message), 0);
 
     printf("read_byte: %d\nMessage from server: %s \n ", read_byte, message);
     // fputs(message, stdout);

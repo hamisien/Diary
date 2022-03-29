@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     struct sockaddr_in serv_addr;
     struct sockaddr_in clnt_addr;
 
-    char message[] = "Hello, socket!";
+    char message[] = "Hello, socket!\n";
 
     if (argc != 2) {
         printf ("Usage: %s <PORT>\n", argv[0]);
@@ -43,8 +43,11 @@ int main(int argc, char* argv[])
     if(sock_clnt = accept(sock_serv, (struct sockaddr*) &clnt_addr, &clnt_addr_size) == -1)
         error_handling ("accept() err");
 
+    printf("sizeof(message): %d\n", sizeof(message));
 
     write (sock_clnt, message, sizeof(message));
+
+    // send(sock_clnt, message, sizeof(message), 0);
 
     close (sock_clnt);
     close (sock_serv);
