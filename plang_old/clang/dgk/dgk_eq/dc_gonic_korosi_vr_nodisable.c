@@ -73,7 +73,7 @@ void gonic_korosi(char* _gid, char* _gonic, int cid, int _vnum)
 	char* strsearch = NULL;
 	unsigned int retry_counter = 1;
 	int i = 0;
-	char trigger_p[50] = "​​​​​​​​​​", trigger_n[50] = "​​​​​​​​​​", trigger_l[50] = "브갤사랑해";
+	char trigger_p[50] = "​​​​​​​​​​", trigger_n[50] = "​​​​​​​​​​", trigger_l[50] = "CENSORED";
 	
 	system("clear");
 	printf("아무 키나 누르면 시작합니다!\n");
@@ -93,14 +93,14 @@ NO_CID:
 
 		FILE *fp = fopen("buffer", "r");
 
-		char pinyong_flag = 0; // 0이면 없음, 1은 사랑해, 2는 싫어
+		char CENSORED = 0; // 0이면 없음, 1은 CENSORED, 2는 CENSORED
 
 		while(fgets(buff, sizeof(buff), fp) != NULL){
 			//printf("%s\n", buff);
 			//system("sleep 0.01");
-			if (strsearch = strstr(buff, trigger_p) != NULL) pinyong_flag = 1; // 대상 고닉 제외 키워드
-			else if (strsearch = strstr(buff, trigger_n) != NULL) pinyong_flag = 2; // 대상 고닉 변경 키워드
-			else if (strsearch = strstr(buff, trigger_l) != NULL) pinyong_flag = 3; // 대상 고닉을 전체로 설정 키워드
+			if (strsearch = strstr(buff, trigger_p) != NULL) CENSORED = 1; // 대상 고닉 제외 키워드
+			else if (strsearch = strstr(buff, trigger_n) != NULL) CENSORED = 2; // 대상 고닉 변경 키워드
+			else if (strsearch = strstr(buff, trigger_l) != NULL) CENSORED = 3; // 대상 고닉을 전체로 설정 키워드
 			if (strsearch = strstr(buff, "gallview_contents")) {
 				system("sleep 0.2");
 				retry_counter = 1;
@@ -128,7 +128,7 @@ NO_CID:
 			}
 			else if (strsearch = strstr(buff, "ID 입력\" class=\"intxt\" value=\"") != NULL) {
 				// strsearch = strstr(buff, "ID 입력\" class=\"intxt\" value=\"");
-				if (pinyong_flag == 3) { // 만약 어떤 고닉이 "피뇽이싫어" 키워드를 입력했다면 대상 고닉을 우선으로.
+				if (CENSORED == 3) { // 만약 어떤 고닉이 "피뇽이싫어" 키워드를 입력했다면 대상 고닉을 우선으로.
 					printf("\n게시글 %d에서 \"%s\" 키워드가 감지되었습니다.\n대상 고닉을 전체(\")로 변경합니다.\a\n\n", cid, trigger_l);
 					system("sleep 1");
 					// printf("현재 gonic의 값: %s\n", gonic);
@@ -165,7 +165,7 @@ NO_CID:
 					system("sleep 1");
 					break;
 				}
-				if (pinyong_flag == 2) { // 만약 어떤 고닉이 "피뇽이싫어" 키워드를 입력했다면 대상 고닉을 우선으로.
+				if (CENSORED == 2) { // 만약 어떤 고닉이 "CENSORED" 키워드를 입력했다면 대상 고닉을 우선으로.
 					printf("\n게시글 %d에서 \"%s\" 키워드가 감지되었습니다.\n대상 고닉을 변경합니다.\a\n\n", cid, trigger_n);
 					system("sleep 1");
 					// printf("현재 gonic의 값: %s\n", gonic);
@@ -218,7 +218,7 @@ NO_CID:
 					break;
 				}
 				else if (strsearch = strstr(buff, gonic) != NULL){
-					if (pinyong_flag == 1) {
+					if (CENSORED == 1) {
 						printf("\n게시글 %d에서 \"%s\" 키워드가 감지되었습니다.\n대상 고닉을 제외합니다.\a\n", cid, trigger_p);
 						system("sleep 1");
 						// printf("현재 gonic의 값: %s\n", gonic);
@@ -228,7 +228,7 @@ NO_CID:
 						// system("sleep 1");
 						strcpy(gonic, "(없​​​​​​​​​​음)");
 						/*
-						2020-11-18 "피뇽이사랑해"에서 Segmentation fault 오류가 계속 났던 이유는 
+						2020-11-18 "CENSORED"에서 Segmentation fault 오류가 계속 났던 이유는 
 						이미 선언된 배열(및 그 배열을 가리키는 포인터)에 문자열을 할당하려고 했기 때문이다.
 						*/
 						// printf("strcpy로 (없음)을 넣은 뒤의 값: %s\n", gonic);
