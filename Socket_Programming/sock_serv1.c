@@ -15,6 +15,8 @@ int main(int argc, char* argv[])
     struct sockaddr_in serv_addr;
     struct sockaddr_in clnt_addr;
 
+    socklen_t clnt_addr_size;
+
     char message[] = "Hello, socket!\n";
 
     if (argc != 2) {
@@ -38,13 +40,14 @@ int main(int argc, char* argv[])
     if(listen(sock_serv, 5) == -1)
         error_handling ("listen() err");
 
-    socklen_t clnt_addr_size = sizeof(clnt_addr);
+    clnt_addr_size = sizeof(clnt_addr);
     
-    if(sock_clnt = accept(sock_serv, (struct sockaddr*) &clnt_addr, &clnt_addr_size) == -1)
+    if((sock_clnt = accept(sock_serv, (struct sockaddr*) &clnt_addr, &clnt_addr_size)) == -1)
         error_handling ("accept() err");
+    /* if 함수의 소괄호 안에서 함수호출과 그 반환값을 변수에 대입할 때는 
+        괄호를 분명하게 넣어서 인지하기 어려운 오류를 만들어내지 말자.. */
 
     printf("sizeof(message): %d\n", sizeof(message));
-
     write (sock_clnt, message, sizeof(message));
 
     // send(sock_clnt, message, sizeof(message), 0);
