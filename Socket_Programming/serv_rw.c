@@ -17,7 +17,8 @@ int main(int argc, char* argv[])
 
     socklen_t clnt_addr_size;
 
-    char message[] = "Hello, socket!\n";
+    char message[] = "Hello, socket!\n"; 
+    /* (16바이트가 전송되는 이유는 개행 문자와 널문자 도합 2바이트가 추가되기 때문) */
 
     if (argc != 2) {
         printf ("Usage: %s <PORT>\n", argv[0]);
