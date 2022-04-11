@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    FILE fd;
+    FILE* fd = fopen("download_file.c", "w");
     int sd;
     char buf[BUF_SIZE];
 
@@ -36,14 +36,34 @@ int main(int argc, char* argv[])
         error_handling("connect() err");
     }
 
-    if((readnum = read(sd, buf, sizeof(buf))) == -1) {
-        error_handling("read() err");
+    while(1) {
+        readnum = read(sd, buf, BUF_SIZE);
+        /* printf("readnum = %d\n", readnum);
+        printf("Received string data: %s\n", buf); */
+
+        if(readnum < BUF_SIZE) {
+            fwrite(buf, sizeof(char), readnum, fd);
+            break;
+        } else {
+            fwrite(buf, sizeof(char), readnum, fd);
+        }
     }
 
-    printf("readnum = %d\n", readnum);
-    printf("Received string data: %s\n", buf);
+    /* 
+        char* thankyou = "Thank you for sending EOF!!"; 
+        sizeof 함수의 인자에 포인터 변수를 넘겨주면 포인터가 가리키는 내용의 size를 반환하지 않고
+        해당 포인터 변수의 사이즈를 반환한다.
+        32비트 컴퓨터에서 포인터 변수의 크기는 4바이트, 64비트는 8바이트이다.
+    */
+    char thankyouarr[] = "Thank you for sending EOF!!";
+
+    if(read(sd, buf, BUF_SIZE) == 0) {
+        /* printf("sizeof(char* thankyou): %d\n sizeof(char thankyou[]): %d\n", sizeof(thankyou), sizeof(thankyouarr)); */
+        write(sd, thankyouarr, sizeof(thankyouarr));
+    }
 
     // fclose();
+    fclose(fd);
     close(sd);
 
     return 0;
