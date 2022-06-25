@@ -1,21 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
-import pymysql
+#import pymysql #RPi에서 지원하지 않는 것 같아요.
 import sys
-
-
-if __name__ == '__main__':
-    if len(sys.argv) == 1:
-        print("""Usage: crawler.py <gid> [option]...
-Try 'crawler.py -h' for more information.""")
-        quit()
-    elif sys.argv[1] == '-h' or sys.argv[1] == '--help':
-        print('''Usage: crawler.py <gid> [option]...\n
--h, --help    display this help and exit
--n, --newest    get the newset PNUM''')
-        quit()
-    elif sys.argv[1] == '-n' or sys.argv[1] == '--newset':
-        pass
 
 
 class post:
@@ -50,9 +36,33 @@ class post:
         print('PNUM: ' + str(self.pnum))
         print('--------------------------------------------------', end='\n')
 
+    def showSimple(self):
+        print('['+str(self.idx),'|',str(self.pnum)+']', self.title+'('+str(self.cmnt)+')', '|', self.nick + '(' + self.id + ')')
+
 
 ua = 'Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Mobile Safari/537.36'
 header = {'User-Agent': ua}
+
+
+def printHelp(opt):
+    if opt == "usage":
+        print(
+"""Usage: crawler.py [option]...
+Try 'crawler.py -h' for more information."""
+)
+    elif opt == "detail":
+        print(
+'''usage: crawler.py [-h] [-n]
+                  [-g GALLNAME]
+
+optional arguments:
+  -h, --help          display this help and exit
+  -n, --newest        get the newest PNUM
+  -g, --gallname      run the operation with given Gallery name argument'''
+)
+    else:
+        pass
+    quit()
 
 
 def scanGall(gid):
@@ -106,20 +116,75 @@ def scanGall(gid):
             
         """
         #> 
-        
-        
-        for i in range(len(lis)-1):
-            posts[i].showInfo()
+        return posts
         
     else:
-        print(response.status_code)
-        
-    return posts
+        if response.status_code >= 400 and response.status_code < 500:
+            print("HTTP requests Err: " + str(response.status_code))
+            printErr("check the GALLNAME")
+        else:
+            print("HTTP requests Err: " + str(response.status_code))
+            quit()
 
 
-# main
-"""
-gesigul = scanGall(sys.argv[1])
-gesigul[0].showInfo()
-"""
-scanGall(sys.argv[1])
+
+def scanChanges(new_posts):
+    old_posts = list()
+    if len(old_posts) == 0:
+        pass
+
+    return
+
+
+def getNewest(posts, opt):
+    if opt == 'p': #pnum
+        return posts[0].pnum
+    elif opt == 's': #showSimple
+        posts[0].showSimple()
+
+
+def optionChk(option): #return 1 when the option is valid in list, otherwise 0
+    try:
+        if sys.argv.index(option) is not None:
+            return 1
+    except:
+        return 0
+
+
+def printErr(msg):
+    print("Err: " + msg)
+    quit()
+
+
+def main(gallname):
+    posts = scanGall(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
+    for i in range(len(posts)):
+        posts[i].showSimple()
+
+
+if __name__ == '__main__':
+    g_gallname = ""
+    if len(sys.argv) == 1:
+        printHelp('usage')
+    elif optionChk('-h') or optionChk('--help'):
+        printHelp('detail')
+    elif optionChk('-n') or optionChk('--newest'):
+        if optionChk('-g') or optionChk('--gallname'):
+            try:
+                g_gallname = sys.argv[(sys.argv.index('-g') + 1)]
+            except:
+                printErr("'-g' option need GALLNAME argument")
+            posts = scanGall(g_gallname)
+            #print(getNewest(posts, 'p'))
+            getNewest(posts, 's')
+        else:
+            printErr("'-n' option requires '-g'")
+    elif optionChk('-g') or optionChk('--gallname'):
+        try:
+            g_gallname = sys.argv[(sys.argv.index('-g') + 1)]
+        except:
+            printErr("'-g' option needs GALLNAME argument")
+        main(g_gallname)
+    else:
+        print("Err: missing or invalid option\n")
+        printHelp('usage')
