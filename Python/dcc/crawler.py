@@ -14,8 +14,9 @@ class post:
     contents = str()
     cmnt = int()
     isImg = bool()
+    isReco = bool()
 
-    def __init__(self, idx=0, pnum=0, url='', title='', nick='', id='', cmnt=0, isImg=False, contents=''):
+    def __init__(self, idx=0, pnum=0, url='', title='', nick='', id='', cmnt=0, isImg=False, isReco=False, contents=''):
         self.idx = idx
         self.pnum = pnum
         self.url = url
@@ -24,6 +25,7 @@ class post:
         self.id = id
         self.cmnt = cmnt
         self.isImg = isImg
+        self.isReco = isReco
         self.contents = contents
 
     def showInfo(self):
@@ -31,6 +33,7 @@ class post:
         print('Title: ' + self.title)
         print('Author(ID): ' + self.nick + '(' + self.id + ')')
         print('Image: ' + str(self.isImg))
+        print('Reco: ' + str(self.isReco))
         print('Comment: ' + str(self.cmnt))
         print('URL: ' + self.url)
         print('PNUM: ' + str(self.pnum))
@@ -85,10 +88,15 @@ def scanGall(gid):
                 cmnt = int(li.select_one("div > a:nth-child(2) > span").get_text())
                 url = li.select_one("div > a:nth-child(1)").attrs['href']
                 pnum = int(url[30+len(gid):])
+                isImg = False
+                isReco = False
                 if li.select_one("div > a:nth-child(1) > span > span.sp-lst-img") != None:
                     isImg = True
-                else: 
-                    isImg = False
+                if li.select_one("div > a:nth-child(1) > span > span.sp-lst-recoimg") != None:
+                    isImg = True
+                    isReco = True
+                if li.select_one("div > a:nth-child(1) > span > span.sp-lst-recotxt") != None:
+                    isReco = True
                 
                 """posts = [post(idx, pnum, url, title, nickname, id, cmnt, isImg, None)]
                 idx += 1"""
@@ -103,7 +111,7 @@ def scanGall(gid):
                 #print(end='\n') is equal to print()
             except:
                 continue
-            posts[idx] = post(idx, pnum, url, title, nickname, id, cmnt, isImg)
+            posts[idx] = post(idx, pnum, url, title, nickname, id, cmnt, isImg, isReco)
             idx += 1
         """
         for i in range(1, 32):
@@ -127,15 +135,6 @@ def scanGall(gid):
             quit()
 
 
-
-def scanChanges(new_posts):
-    old_posts = list()
-    if len(old_posts) == 0:
-        pass
-
-    return
-
-
 def getNewest(posts, opt):
     if opt == 'p': #pnum
         return posts[0].pnum
@@ -156,10 +155,44 @@ def printErr(msg):
     quit()
 
 
+old_posts = list()
+def scanDiff(new_posts): 
+    #scanDiff()의 인자에 posts 리스트를 넣으면 nwe_posts와 old_posts를 비교하여 변동이 있는 post만 pnum으로 반환한다.
+    global old_posts
+    if len(old_posts) == 0: #initialize
+        return -1
+    else:
+        for i in range(len(new_posts)):
+            if new_posts[i].pnum >= old_posts[0].pnum and new_posts[i].pnum <= old_posts[len(old_posts) - 1]:
+                for j in range(len(old_posts)):
+                    if new_posts[i].pnum == old_posts[j].pnum:
+                        pass
+                        
+                        #starred, comment 변동 여부 확인..
+                        #변동이 있는 경우 -> viewPost() -> sendsql()
+                        #변동이 없는 경우 -> continue() -> new_posts의 idx를 +1
+
+                        #또는 starred 및 comment 리스트에 pnum 추가
+                    else:
+                        pass
+                        #해당 pnum을 deleted로 분류 -> sendsql()
+
+                        #또는 deleted 리스트에 pnum 추가
+            else:
+                continue
+        
+        #return del star cmnt
+
+
+def viewPost(pnum):
+    pass
+
+
 def main(gallname):
     posts = scanGall(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
     for i in range(len(posts)):
-        posts[i].showSimple()
+        #posts[i].showSimple()
+        posts[i].showInfo()
 
 
 if __name__ == '__main__':
