@@ -2,7 +2,10 @@ import requests
 from bs4 import BeautifulSoup
 #import pymysql #RPi에서 지원하지 않는 것 같아요.
 import sys
+from time import sleep
+from copy import deepcopy
 
+f_DBG = True
 
 class post:
     idx = int()
@@ -40,7 +43,12 @@ class post:
         print('--------------------------------------------------', end='\n')
 
     def showSimple(self):
-        print('['+str(self.idx),'|',str(self.pnum)+']', self.title+'('+str(self.cmnt)+')', '|', self.nick + '(' + self.id + ')')
+        print('['+str(self.idx)+'|'+str(self.pnum)+']', self.title+'('+str(self.cmnt)+')', '|', self.nick + '(' + self.id + ')')
+
+    """def getPnum(self):
+        if f_DBG == True:
+            print("getPnum(): " + str(self.pnum) + " 호출됨")
+        return self.pnum"""
 
 
 ua = 'Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Mobile Safari/537.36'
@@ -135,13 +143,6 @@ def scanGall(gid):
             quit()
 
 
-def getNewest(posts, opt):
-    if opt == 'p': #pnum
-        return posts[0].pnum
-    elif opt == 's': #showSimple
-        posts[0].showSimple()
-
-
 def optionChk(option): #return 1 when the option is valid in list, otherwise 0
     try:
         if sys.argv.index(option) is not None:
@@ -155,33 +156,64 @@ def printErr(msg):
     quit()
 
 
+def printDbg(msg):
+    print("Dbg: " + msg)
+
+
 old_posts = list()
 def scanDiff(new_posts): 
     #scanDiff()의 인자에 posts 리스트를 넣으면 nwe_posts와 old_posts를 비교하여 변동이 있는 post만 pnum으로 반환한다.
     global old_posts
     if len(old_posts) == 0: #initialize
+        """if f_DBG == True:
+            printDbg("scanDiff()가 처음 호출되어 initialize 되었습니다.")"""
+        old_posts = deepcopy(new_posts)
         return -1
     else:
+        """if f_DBG == True:
+            printDbg("scanDiff()가 initialize 된 이후에 호출되었습니다.")"""
+
+        reco = list()
+        cmnt = list()
+        deleted = list()
+
         for i in range(len(new_posts)):
-            if new_posts[i].pnum >= old_posts[0].pnum and new_posts[i].pnum <= old_posts[len(old_posts) - 1]:
+            if old_posts[len(old_posts) -1].pnum <= new_posts[i].pnum <= old_posts[0].pnum:
+                """if f_DBG == True:
+                    printDbg("scanDiff(): " + str(old_posts[len(old_posts) -1].pnum) + " <= new_posts[" + str(i) + "].pnum -> " + str(new_posts[i].pnum) + " <= " + str(old_posts[0].pnum))"""
                 for j in range(len(old_posts)):
                     if new_posts[i].pnum == old_posts[j].pnum:
-                        pass
+                        if new_posts[i].isReco != old_posts[j].isReco:
+                            if new_posts[i].isReco == True:
+                                new_posts[i].showSimple()
+                                print("위 게시글이 개념글로 등록됨을 감지했어요.\n")
+                                reco.append(new_posts[i].pnum)
+
+                        if new_posts[i].cmnt != old_posts[j].cmnt:
+                            new_posts[i].showSimple()
+                            print("위 게시글의 댓글 수의 변화를 감지했어요.")
+                            print("댓글 수: " + str(old_posts[j].cmnt), '->', str(new_posts[i].cmnt) + '\n')
                         
+                        break #같은 pnum을 찾았으니 j의 쓸데없는 증가 연산을 방지하기 위해 break
                         #starred, comment 변동 여부 확인..
                         #변동이 있는 경우 -> viewPost() -> sendsql()
                         #변동이 없는 경우 -> continue() -> new_posts의 idx를 +1
 
                         #또는 starred 및 comment 리스트에 pnum 추가
                     else:
-                        pass
+                        if j == (len(old_posts) - 1):
+                            #j가 마지막 게시글까지 도달했음에도 불구하고 같은 pnum을 찾지 못했다는 것은 해당 게시글이 삭제되었다는 뜻이다.
+                            old_posts[j].showSimple()
+                            print("위 게시글은 삭제되었어요.\n")
+                        else:
+                            continue
                         #해당 pnum을 deleted로 분류 -> sendsql()
 
                         #또는 deleted 리스트에 pnum 추가
             else:
                 continue
-        
-        #return del star cmnt
+        old_posts = deepcopy(new_posts)
+        #return reco, cmnt, deleted
 
 
 def viewPost(pnum):
@@ -189,35 +221,42 @@ def viewPost(pnum):
 
 
 def main(gallname):
-    posts = scanGall(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
-    for i in range(len(posts)):
-        #posts[i].showSimple()
-        posts[i].showInfo()
+    while 1:
+        posts = scanGall(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
+        scanDiff(posts)
+        sleep(1)
+
+        """
+        for i in range(len(posts)):
+            posts[i].showSimple()
+        #posts[i].showInfo()
+        """
+
 
 
 if __name__ == '__main__':
     g_gallname = ""
-    if len(sys.argv) == 1:
+    if len(sys.argv) == 1: #crawler.py 뒤에 아무런 옵션도 붙지 않은 경우
         printHelp('usage')
-    elif optionChk('-h') or optionChk('--help'):
+    elif optionChk('-h') or optionChk('--help'): #'-h' 옵션이 붙은 경우
         printHelp('detail')
-    elif optionChk('-n') or optionChk('--newest'):
-        if optionChk('-g') or optionChk('--gallname'):
+    elif optionChk('-n') or optionChk('--newest'): #'-n' 옵션이 붙은 경우
+        if optionChk('-g') or optionChk('--gallname'): #'-n' 옵션이 의존하는 '-g' 옵션이 있는지 확인
             try:
-                g_gallname = sys.argv[(sys.argv.index('-g') + 1)]
+                g_gallname = sys.argv[(sys.argv.index('-g') + 1)] #'-g' 옵션의 인자가 있는지 확인
             except:
                 printErr("'-g' option need GALLNAME argument")
             posts = scanGall(g_gallname)
-            #print(getNewest(posts, 'p'))
-            getNewest(posts, 's')
+            #print(posts[0].getPnum)
+            posts[0].showSimple()
         else:
             printErr("'-n' option requires '-g'")
-    elif optionChk('-g') or optionChk('--gallname'):
+    elif optionChk('-g') or optionChk('--gallname'): #'-g' 옵션이 붙은 경우
         try:
-            g_gallname = sys.argv[(sys.argv.index('-g') + 1)]
+            g_gallname = sys.argv[(sys.argv.index('-g') + 1)] #'-g' 옵션의 인자가 있는지 확인
         except:
             printErr("'-g' option needs GALLNAME argument")
         main(g_gallname)
-    else:
+    else: #유효하지 않은 인자가 입력된 경우
         print("Err: missing or invalid option\n")
         printHelp('usage')
