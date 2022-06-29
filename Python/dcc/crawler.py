@@ -43,7 +43,7 @@ class post:
         print('--------------------------------------------------', end='\n')
 
     def showSimple(self):
-        print('['+str(self.idx)+'|'+str(self.pnum)+']', self.title+'('+str(self.cmnt)+')', '|', self.nick + '(' + self.id + ')')
+        print('\033[1m' + '['+str(self.idx)+'|'+str(self.pnum)+']' + '\033[0m', self.title+'('+str(self.cmnt)+')', '|', self.nick + '(' + self.id + ')')
 
     """def getPnum(self):
         if f_DBG == True:
@@ -179,37 +179,45 @@ def scanDiff(new_posts):
 
         for i in range(len(new_posts)):
             if old_posts[len(old_posts) -1].pnum <= new_posts[i].pnum <= old_posts[0].pnum:
+                #new_posts와 old_posts를 비교하며 념글의 변화, 댓글 수 변화를 감지한다.
                 """if f_DBG == True:
-                    printDbg("scanDiff(): " + str(old_posts[len(old_posts) -1].pnum) + " <= new_posts[" + str(i) + "].pnum -> " + str(new_posts[i].pnum) + " <= " + str(old_posts[0].pnum))"""
+                    printDbg("scanDiff(): " + str(old_posts[len(old_posts) -1].pnum) + " <= new_posts[" + str(i) + "].pnum → " + str(new_posts[i].pnum) + " <= " + str(old_posts[0].pnum))"""
                 for j in range(len(old_posts)):
                     if new_posts[i].pnum == old_posts[j].pnum:
-                        if new_posts[i].isReco != old_posts[j].isReco:
-                            if new_posts[i].isReco == True:
+                        if new_posts[i].isReco != old_posts[j].isReco and new_posts[i].isReco == True:
+                            if f_DBG == True:
                                 new_posts[i].showSimple()
-                                print("위 게시글이 개념글로 등록됨을 감지했어요.\n")
-                                reco.append(new_posts[i].pnum)
+                                print('\033[106;1;31m' + "[념글]" + '\033[0m', "개념글로 등록되었어요.\n")
+                            reco.append(new_posts[i].pnum)
 
                         if new_posts[i].cmnt != old_posts[j].cmnt:
-                            new_posts[i].showSimple()
-                            print("위 게시글의 댓글 수의 변화를 감지했어요.")
-                            print("댓글 수: " + str(old_posts[j].cmnt), '->', str(new_posts[i].cmnt) + '\n')
+                            if f_DBG == True:
+                                new_posts[i].showSimple()
+                                print('\033[103;1;31m' + "[댓글]" + '\033[0m', "댓글 수의 변화를 감지했어요.")
+                                print("댓글 수: " + str(old_posts[j].cmnt), '→', str(new_posts[i].cmnt) + '\n')
+                            cmnt.append(new_posts[i].pnum)
                         
                         break #같은 pnum을 찾았으니 j의 쓸데없는 증가 연산을 방지하기 위해 break
                         #starred, comment 변동 여부 확인..
-                        #변동이 있는 경우 -> viewPost() -> sendsql()
-                        #변동이 없는 경우 -> continue() -> new_posts의 idx를 +1
+                        #변동이 있는 경우 → viewPost() → sendsql()
+                        #변동이 없는 경우 → continue() → new_posts의 idx를 +1
 
                         #또는 starred 및 comment 리스트에 pnum 추가
-                    else:
-                        if j == (len(old_posts) - 1):
+                        """처음부터 이 논리 자체가 잘못되었음.
+                        elif j == (len(old_posts) - 1):
                             #j가 마지막 게시글까지 도달했음에도 불구하고 같은 pnum을 찾지 못했다는 것은 해당 게시글이 삭제되었다는 뜻이다.
-                            old_posts[j].showSimple()
-                            print("위 게시글은 삭제되었어요.\n")
-                        else:
-                            continue
-                        #해당 pnum을 deleted로 분류 -> sendsql()
+                            if f_DBG == True:
+                                old_posts[j].showSimple()
+                                print('\033[101;1;33m' + "[글삭]" + '\033[0m', "게시글이 삭제되었어요.\n")
+                                #해당 pnum을 deleted로 분류 → sendsql()
 
-                        #또는 deleted 리스트에 pnum 추가
+                                #또는 deleted 리스트에 pnum 추가"""
+                    else:
+                        continue
+            elif new_posts[i].pnum > old_posts[0].pnum:
+                if f_DBG == True:
+                    new_posts[i].showSimple()
+                    print('\033[102;1;30m' + "[새 글]" + '\033[0m', "새 글이 등록되었어요.\n")
             else:
                 continue
         old_posts = deepcopy(new_posts)
@@ -224,7 +232,7 @@ def main(gallname):
     while 1:
         posts = scanGall(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
         scanDiff(posts)
-        sleep(1)
+        #sleep(1)
 
         """
         for i in range(len(posts)):
