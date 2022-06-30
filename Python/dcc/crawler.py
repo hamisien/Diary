@@ -188,7 +188,7 @@ def scanDiff(new_posts):
                         if new_posts[i].isReco != old_posts[j].isReco and new_posts[i].isReco == True:
                             if f_DBG == True:
                                 new_posts[i].showSimple()
-                                print('\033[106;1;31m' + "[념글]" + '\033[0m', "개념글로 등록되었어요.\n")
+                                print('\033[44;1;39m' + "[념글]" + '\033[0m', "개념글로 등록되었어요.\n")
                             reco.append(new_posts[i].pnum)
 
                         if new_posts[i].cmnt != old_posts[j].cmnt:
@@ -223,7 +223,7 @@ def scanDiff(new_posts):
                     else:
                         if f_DBG == True:
                             old_posts[j].showSimple()
-                            print('\033[101;1;33m' + "[글삭]" + '\033[0m', "게시글이 삭제되었어요.\n")
+                            print('\033[41;1;37m' + "[글삭]" + '\033[0m', "게시글이 삭제되었어요.\n")
             elif new_posts[i].pnum > old_posts[0].pnum:
                 if f_DBG == True:
                     new_posts[i].showSimple()
