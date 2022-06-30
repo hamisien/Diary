@@ -176,9 +176,6 @@ def scanDiff(new_posts):
         deleted = list()
 
         for i in range(len(new_posts)):
-            ### 1st way to scan deleted post..(1) ###
-            loop_breaker = False
-            ### 1st way to scan deleted post..(1) ###
             if old_posts[len(old_posts) -1].pnum <= new_posts[i].pnum <= old_posts[0].pnum:
                 #new_posts와 old_posts를 비교하며 념글의 변화, 댓글 수 변화를 감지한다.
                 """if f_DBG == True:
@@ -198,14 +195,7 @@ def scanDiff(new_posts):
                                 print("댓글 수: " + str(old_posts[j].cmnt), '→', str(new_posts[i].cmnt) + '\n')
                             cmnt.append(new_posts[i].pnum)
                         
-                        ### 1st way to scan deleted post..(0) ###
-                        if j == (len(old_posts) - 1) or i == (len(new_posts) - 1):
-                            loop_breaker = True
-                            break
-                        i = i + 1 
-                        ### 1st way to scan deleted post..(0) ###
-                        
-                        #break #같은 pnum을 찾았으니 j의 쓸데없는 증가 연산을 방지하기 위해 break
+                        break #같은 pnum을 찾았으니 j의 쓸데없는 증가 연산을 방지하기 위해 break
                         #starred, comment 변동 여부 확인..
                         #변동이 있는 경우 → viewPost() → sendsql()
                         #변동이 없는 경우 → continue() → new_posts의 idx를 +1
@@ -221,21 +211,13 @@ def scanDiff(new_posts):
 
                                 #또는 deleted 리스트에 pnum 추가"""
                     else:
-                        if f_DBG == True:
-                            old_posts[j].showSimple()
-                            print('\033[101;1;33m' + "[글삭]" + '\033[0m', "게시글이 삭제되었어요.\n")
+                        continue
             elif new_posts[i].pnum > old_posts[0].pnum:
                 if f_DBG == True:
                     new_posts[i].showSimple()
                     print('\033[102;1;30m' + "[새 글]" + '\033[0m', "새 글이 등록되었어요.\n")
             else:
                 continue
-
-            ### 1st way to scan deleted post..(2) ###
-            if loop_breaker == True:
-                break
-            ### 1st way to scan deleted post..(2) ###
-
         """ 2nd way to scan deleted post..
             for i in range(len(old_posts)):
             pass"""
@@ -252,7 +234,7 @@ def main(gallname):
     while 1:
         posts = scanGall(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
         scanDiff(posts)
-        #sleep(2)
+        #sleep(1)
 
         """
         for i in range(len(posts)):
