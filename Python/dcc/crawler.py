@@ -1,3 +1,4 @@
+from zlib import DEFLATED
 import requests
 from bs4 import BeautifulSoup
 #import pymysql #RPi에서 지원하지 않는 것 같아요.
@@ -75,7 +76,13 @@ optional arguments:
 ua = 'Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Mobile Safari/537.36'
 header = {'User-Agent': ua}
 def scanGall(gid):
-    response = requests.get('https://m.dcinside.com/board/'+gid, headers=header)
+    while True:
+        try:
+            response = requests.get('https://m.dcinside.com/board/'+gid, headers=header)
+            break
+        except:
+            print("Connection refused, waiting a few seconds..")
+            sleep(5)
 
     if response.status_code == 200:
         idx = 0
@@ -224,6 +231,7 @@ def scanDiff(new_posts):
                         if f_DBG == True:
                             old_posts[j].showSimple()
                             print('\033[41;1;37m' + "[글삭]" + '\033[0m', "게시글이 삭제되었어요.\n")
+                        deleted.append(old_posts[j].pnum)
             elif new_posts[i].pnum > old_posts[0].pnum:
                 if f_DBG == True:
                     new_posts[i].showSimple()
@@ -241,7 +249,7 @@ def scanDiff(new_posts):
             pass"""
 
         old_posts = deepcopy(new_posts)
-        #return reco, cmnt, deleted
+        return reco, cmnt, deleted
 
 
 def viewPost(pnum):
@@ -251,8 +259,9 @@ def viewPost(pnum):
 def main(gallname):
     while 1:
         posts = scanGall(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
-        scanDiff(posts)
-        #sleep(2)
+        reco, cmnt, deleted = scanDiff(posts)
+        print(reco, cmnt, deleted)
+        sleep(2)
 
         """
         for i in range(len(posts)):
