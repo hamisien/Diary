@@ -259,8 +259,9 @@ def viewPost(pnum):
 def main(gallname):
     while 1:
         posts = scanGall(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
-        reco, cmnt, deleted = scanDiff(posts)
-        print(reco, cmnt, deleted)
+        scanDiff(posts)
+        #reco, cmnt, deleted = scanDiff(posts)
+        #print(reco, cmnt, deleted)
         sleep(2)
 
         """
