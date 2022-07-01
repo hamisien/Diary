@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 #import pymysql #RPi에서 지원하지 않는 것 같아요.
 import sys
 from time import sleep
+from time import localtime
 from copy import deepcopy
 
 f_DBG = True #Debug switch
@@ -148,6 +149,79 @@ def scanGall(gid):
             quit()
 
 
+def scanGall_pc(gid):
+    while True:
+        try:
+            response = requests.get('https://gall.dcinside.com/mgallery/board/lists/?id='+gid+'&list_num=100')
+            break
+        except:
+            print("Connection refused, waiting a few seconds..")
+            sleep(5)
+
+    if response.status_code == 200:
+        idx = 0
+        html = response.text
+        soup = BeautifulSoup(html, 'html.parser')
+        lis = soup.select('ul.gall-detail-lst > li')
+        #print("게시글 개수: " + str(len(lis)-1) + '\n')
+        posts = list(post() for i in range(len(lis)-1)) #equal to [ post() for i in range(30) ]
+        
+        #< 게시글 정보 추출
+        for li in lis:
+            try: 
+                title = li.select_one('div > a:nth-child(1) > span > span.subjectin').get_text()
+                nickname = li.select_one("span.blockInfo").attrs['data-name']
+                id = li.select_one("span.blockInfo").attrs['data-info']
+                cmnt = int(li.select_one("div > a:nth-child(2) > span").get_text())
+                url = li.select_one("div > a:nth-child(1)").attrs['href']
+                pnum = int(url[30+len(gid):])
+                isImg = False
+                isReco = False
+                if li.select_one("div > a:nth-child(1) > span > span.sp-lst-img") != None:
+                    isImg = True
+                if li.select_one("div > a:nth-child(1) > span > span.sp-lst-recoimg") != None:
+                    isImg = True
+                    isReco = True
+                if li.select_one("div > a:nth-child(1) > span > span.sp-lst-recotxt") != None:
+                    isReco = True
+                
+                """posts = [post(idx, pnum, url, title, nickname, id, cmnt, isImg, None)]
+                idx += 1"""
+
+                """print('Title: ' + title)
+                print('Author(ID): ' + nickname + '(' + id + ')')
+                print('Image: ' + str(isImg))
+                print('Comment: ' + str(cmnt))
+                print('URL: ' + url)
+                print('PNUM: ' + str(pnum))
+                print('--------------------------------------------------', end='\n')"""
+                #print(end='\n') is equal to print()
+            except:
+                continue
+            posts[idx] = post(idx, pnum, url, title, nickname, id, cmnt, isImg, isReco)
+            idx += 1
+        """
+        for i in range(1, 32):
+            
+            css_selector = 'body > div > div > div > section:nth-child(3) > ul.gall-detail-lst > li:nth-child({}) > div > a.lt > span > span.subjectin'.format(i)
+            # equal to 'str%ding' %(i)
+            
+            title = str(soup.select_one(css_selector))
+            print(title[24:-7])
+            
+        """
+        #> 
+        return posts
+        
+    else:
+        if response.status_code >= 400 and response.status_code < 500:
+            print("HTTP requests Err: " + str(response.status_code))
+            printErr("check the GALLNAME")
+        else:
+            print("HTTP requests Err: " + str(response.status_code))
+            quit()
+
+
 def optionChk(option): #return 1 when the option is valid in list, otherwise 0
     try:
         if sys.argv.index(option) is not None:
@@ -163,6 +237,11 @@ def printErr(msg):
 
 def printDbg(msg):
     print("Dbg: " + msg)
+
+
+def printTime():
+    now_time = localtime()
+    print("\033[1m< %04d/%02d/%02d %02d:%02d:%02d >\033[0m" % (now_time.tm_year, now_time.tm_mon, now_time.tm_mday, now_time.tm_hour, now_time.tm_min, now_time.tm_sec))
 
 
 old_posts = list()
@@ -194,12 +273,14 @@ def scanDiff(new_posts):
                     if new_posts[i].pnum == old_posts[j].pnum:
                         if new_posts[i].isReco != old_posts[j].isReco and new_posts[i].isReco == True:
                             if f_DBG == True:
+                                printTime()
                                 new_posts[i].showSimple()
                                 print('\033[44;1;39m' + "[념글]" + '\033[0m', "개념글로 등록되었어요.\n")
                             reco.append(new_posts[i].pnum)
 
                         if new_posts[i].cmnt != old_posts[j].cmnt:
                             if f_DBG == True:
+                                printTime()
                                 new_posts[i].showSimple()
                                 print('\033[103;1;31m' + "[댓글]" + '\033[0m', "댓글 수의 변화를 감지했어요.")
                                 print("댓글 수: " + str(old_posts[j].cmnt), '→', str(new_posts[i].cmnt) + '\n')
@@ -229,11 +310,13 @@ def scanDiff(new_posts):
                                 #또는 deleted 리스트에 pnum 추가"""
                     else:
                         if f_DBG == True:
+                            printTime()
                             old_posts[j].showSimple()
                             print('\033[41;1;37m' + "[글삭]" + '\033[0m', "게시글이 삭제되었어요.\n")
                         deleted.append(old_posts[j].pnum)
             elif new_posts[i].pnum > old_posts[0].pnum:
                 if f_DBG == True:
+                    printTime()
                     new_posts[i].showSimple()
                     print('\033[102;1;30m' + "[새 글]" + '\033[0m', "새 글이 등록되었어요.\n")
             else:
