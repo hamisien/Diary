@@ -1,4 +1,3 @@
-from zlib import DEFLATED
 import requests
 from bs4 import BeautifulSoup
 #import pymysql #RPi에서 지원하지 않는 것 같아요.
@@ -17,7 +16,7 @@ class post:
     nick = str()
     id = str() #ip address
     contents = str()
-    cmnt = int()
+    cmnt = int() #int()에서 str()로 바꿈.. 이유는 scanGall_pc()에서 보이스리플이 달리면 "4/1" 형식으로 표시되어 int()에서 오류가 발생함
     isImg = bool()
     isReco = bool()
 
@@ -100,7 +99,7 @@ def scanGall(gid):
                 title = li.select_one('div > a:nth-child(1) > span > span.subjectin').get_text()
                 nickname = li.select_one("span.blockInfo").attrs['data-name']
                 id = li.select_one("span.blockInfo").attrs['data-info']
-                cmnt = int(li.select_one("div > a:nth-child(2) > span").get_text())
+                cmnt = int(li.select_one("div > a:nth-child(2) > span:nth-child(1)").get_text())
                 url = li.select_one("div > a:nth-child(1)").attrs['href']
                 pnum = int(url[30+len(gid):])
                 isImg = False
@@ -191,9 +190,9 @@ def scanGall_pc(gid): #selenium을 이용하지 않고 한번에 볼 수 있는 
             if len(id) == 0:
                 id = li.select_one("td.gall_writer").attrs['data-ip']
             if li.select_one("td.gall_tit > a:nth-child(2) > span.reply_num") is None:
-                cmnt = 0
+                cmnt = '0'
             else: 
-                cmnt = int(str(li.select_one("td.gall_tit > a:nth-child(2) > span.reply_num").get_text())[1:-1])
+                cmnt = str(li.select_one("td.gall_tit > a:nth-child(2) > span.reply_num").get_text())[1:-1]
             url = str("https://gall.dcinside.com" + li.select_one("td.gall_tit > a:nth-child(1)").attrs['href'])
             if mgallery == True:
                 pnum = int(url[50+len(gid)+4:-20])
