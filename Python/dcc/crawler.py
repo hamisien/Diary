@@ -74,12 +74,13 @@ optional arguments:
     quit()
 
 
-ua = 'Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Mobile Safari/537.36'
-header = {'User-Agent': ua}
 def scanGall(gid):
+    ua = 'Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Mobile Safari/537.36'
+    header = {'User-Agent': ua}
     while True:
         try:
             response = requests.get('https://m.dcinside.com/board/'+gid, headers=header)
+            #headers는 필수다.
             break
         except:
             print("Connection refused, waiting a few seconds..")
@@ -149,10 +150,12 @@ def scanGall(gid):
             quit()
 
 
-def scanGall_pc(gid):
+def scanGall_pc(gid): #selenium을 이용하지 않고 한번에 볼 수 있는 게시글 수의 한도를 30개에서 100개로 늘려요.
+    ua = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.96 Safari/537.36'
+    header = {'User-Agent': ua}
     while True:
         try:
-            response = requests.get('https://gall.dcinside.com/mgallery/board/lists/?id='+gid+'&list_num=100')
+            response = requests.get('https://gall.dcinside.com/board/lists/?id='+gid+"&list_num=100", headers=header)
             break
         except:
             print("Connection refused, waiting a few seconds..")
@@ -162,42 +165,55 @@ def scanGall_pc(gid):
         idx = 0
         html = response.text
         soup = BeautifulSoup(html, 'html.parser')
-        lis = soup.select('ul.gall-detail-lst > li')
+        filt = soup.select('table.gall_list > tbody > tr.us-post')
+        lis = list()
+        for f in filt:
+            if f.attrs['data-type'] == "icon_notice":
+                continue
+            lis.append(f)
+
         #print("게시글 개수: " + str(len(lis)-1) + '\n')
-        posts = list(post() for i in range(len(lis)-1)) #equal to [ post() for i in range(30) ]
+        posts = list(post() for i in range(len(lis))) #equal to [ post() for i in range(30) ]
         
         #< 게시글 정보 추출
         for li in lis:
-            try: 
-                title = li.select_one('div > a:nth-child(1) > span > span.subjectin').get_text()
-                nickname = li.select_one("span.blockInfo").attrs['data-name']
-                id = li.select_one("span.blockInfo").attrs['data-info']
-                cmnt = int(li.select_one("div > a:nth-child(2) > span").get_text())
-                url = li.select_one("div > a:nth-child(1)").attrs['href']
-                pnum = int(url[30+len(gid):])
-                isImg = False
-                isReco = False
-                if li.select_one("div > a:nth-child(1) > span > span.sp-lst-img") != None:
-                    isImg = True
-                if li.select_one("div > a:nth-child(1) > span > span.sp-lst-recoimg") != None:
-                    isImg = True
-                    isReco = True
-                if li.select_one("div > a:nth-child(1) > span > span.sp-lst-recotxt") != None:
-                    isReco = True
-                
-                """posts = [post(idx, pnum, url, title, nickname, id, cmnt, isImg, None)]
-                idx += 1"""
+            #try: 
+            title = li.select_one('td.gall_tit > a:nth-child(1)').get_text()
+            nickname = li.select_one("td.gall_writer").attrs['data-nick']
+            id = li.select_one("td.gall_writer").attrs['data-uid']
+            if len(id) == 0:
+                id = li.select_one("td.gall_writer").attrs['data-ip']
+            if li.select_one("td.gall_tit > a:nth-child(2) > span.reply_num") is None:
+                cmnt = 0
+            else: 
+                cmnt = int(str(li.select_one("td.gall_tit > a:nth-child(2) > span.reply_num").get_text())[1:-1])
+            url = str("https://gall.dcinside.com" + li.select_one("td.gall_tit > a:nth-child(1)").attrs['href'])
+            pnum = int(url[41+len(gid)+4:-20])
+            isImg = False
+            isReco = False
+            if li.select_one("td.gall_tit > a:nth-child(1) > em.icon_pic") != None:
+                isImg = True
+            if li.select_one("td.gall_tit > a:nth-child(1) > em.icon_recomimg") != None:
+                isImg = True
+                isReco = True
+            if li.select_one("td.gall_tit > a:nth-child(1) > em.icon_recomtxt") != None:
+                isReco = True
+            
+            """posts = [post(idx, pnum, url, title, nickname, id, cmnt, isImg, None)]
+            idx += 1"""
 
-                """print('Title: ' + title)
-                print('Author(ID): ' + nickname + '(' + id + ')')
-                print('Image: ' + str(isImg))
-                print('Comment: ' + str(cmnt))
-                print('URL: ' + url)
-                print('PNUM: ' + str(pnum))
-                print('--------------------------------------------------', end='\n')"""
-                #print(end='\n') is equal to print()
-            except:
-                continue
+            """print('Title: ' + title)
+            print('Author(ID): ' + nickname + '(' + id + ')')
+            print('Image: ' + str(isImg))
+            print('Comment: ' + str(cmnt))
+            print('URL: ' + url)
+            print('PNUM: ' + str(pnum))
+            print('--------------------------------------------------', end='\n')"""
+            #print(end='\n') is equal to print()
+            """except:
+                print("for li in lis에서 except 실행됨")
+                continue"""
+            #print(idx)
             posts[idx] = post(idx, pnum, url, title, nickname, id, cmnt, isImg, isReco)
             idx += 1
         """
@@ -341,8 +357,10 @@ def viewPost(pnum):
 
 def main(gallname):
     while 1:
-        posts = scanGall(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
+        posts = scanGall_pc(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
         scanDiff(posts)
+        #for i in range(len(posts)):
+        #    posts[i].showSimple()
         #reco, cmnt, deleted = scanDiff(posts)
         #print(reco, cmnt, deleted)
         sleep(2)
