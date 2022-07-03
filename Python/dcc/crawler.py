@@ -125,6 +125,9 @@ def scanGall(gid):
                 print('--------------------------------------------------', end='\n')"""
                 #print(end='\n') is equal to print()
             except:
+                if f_DBG == True:
+                    print("scanGall()에서 예외가 발생했어요.")
+                    sleep(60)
                 continue
             posts[idx] = post(idx, pnum, url, title, nickname, id, cmnt, isImg, isReco)
             idx += 1
@@ -149,13 +152,17 @@ def scanGall(gid):
             print("HTTP requests Err: " + str(response.status_code))
             quit()
 
-
+mgallery = False
 def scanGall_pc(gid): #selenium을 이용하지 않고 한번에 볼 수 있는 게시글 수의 한도를 30개에서 100개로 늘려요.
     ua = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.96 Safari/537.36'
     header = {'User-Agent': ua}
+    global mgallery
     while True:
         try:
             response = requests.get('https://gall.dcinside.com/board/lists/?id='+gid+"&list_num=100", headers=header)
+            if len(response.text) < 120 + len(gid) or mgallery == True:
+                mgallery = True
+                response = requests.get('https://gall.dcinside.com/mgallery/board/lists/?id='+gid+"&list_num=100", headers=header)
             break
         except:
             print("Connection refused, waiting a few seconds..")
@@ -188,7 +195,10 @@ def scanGall_pc(gid): #selenium을 이용하지 않고 한번에 볼 수 있는 
             else: 
                 cmnt = int(str(li.select_one("td.gall_tit > a:nth-child(2) > span.reply_num").get_text())[1:-1])
             url = str("https://gall.dcinside.com" + li.select_one("td.gall_tit > a:nth-child(1)").attrs['href'])
-            pnum = int(url[41+len(gid)+4:-20])
+            if mgallery == True:
+                pnum = int(url[50+len(gid)+4:-20])
+            else:
+                pnum = int(url[41+len(gid)+4:-20])
             isImg = False
             isReco = False
             if li.select_one("td.gall_tit > a:nth-child(1) > em.icon_pic") != None:
