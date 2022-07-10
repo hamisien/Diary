@@ -1,4 +1,6 @@
 from audioop import reverse
+from lib2to3.pgen2.token import COMMENT
+from unittest import defaultTestLoader
 import requests
 from bs4 import BeautifulSoup
 #import pymysql #RPi에서 지원하지 않는 것 같아요.
@@ -372,7 +374,9 @@ def viewPost(pnum):
 def main(gallname):
     while 1:
         posts = scanGall_pc(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
-        scanDiff(posts)
+        scanResult = scanDiff(posts)
+        if scanResult != -1 and len(scanResult[0]) + len(scanResult[1]) + len(scanResult[2]) != 0:
+            print("Gallery: " + gallname + "\nRecommend: " + str(scanResult[0]) + "\nComment: " + str(scanResult[1]) + "\nDeleted: " + str(scanResult[2]), end="\n\n")
         #for i in range(len(posts)):
         #    posts[i].showSimple()
         #reco, cmnt, deleted = scanDiff(posts)
