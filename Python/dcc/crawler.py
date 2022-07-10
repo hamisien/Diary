@@ -1,3 +1,4 @@
+from audioop import reverse
 import requests
 from bs4 import BeautifulSoup
 #import pymysql #RPi에서 지원하지 않는 것 같아요.
@@ -80,10 +81,11 @@ def scanGall(gid):
         try:
             response = requests.get('https://m.dcinside.com/board/'+gid, headers=header)
             #headers는 필수다.
-            break
         except:
             print("Connection refused, waiting a few seconds..")
             sleep(5)
+        else: #try 시도 후, 오류가 없으면 실행
+            break
 
     if response.status_code == 200:
         idx = 0
@@ -91,7 +93,7 @@ def scanGall(gid):
         soup = BeautifulSoup(html, 'html.parser')
         lis = soup.select('ul.gall-detail-lst > li')
         #print("게시글 개수: " + str(len(lis)-1) + '\n')
-        posts = list(post() for i in range(len(lis)-1)) #equal to [ post() for i in range(30) ]
+        posts = list(post() for i in range(len(lis)-1))
         
         #< 게시글 정보 추출
         for li in lis:
@@ -124,9 +126,6 @@ def scanGall(gid):
                 print('--------------------------------------------------', end='\n')"""
                 #print(end='\n') is equal to print()
             except:
-                if f_DBG == True:
-                    print("scanGall()에서 예외가 발생했어요.")
-                    sleep(60)
                 continue
             posts[idx] = post(idx, pnum, url, title, nickname, id, cmnt, isImg, isReco)
             idx += 1
@@ -162,10 +161,11 @@ def scanGall_pc(gid): #selenium을 이용하지 않고 한번에 볼 수 있는 
             if len(response.text) < 120 + len(gid) or mgallery == True:
                 mgallery = True
                 response = requests.get('https://gall.dcinside.com/mgallery/board/lists/?id='+gid+"&list_num=100", headers=header)
-            break
         except:
             print("Connection refused, waiting a few seconds..")
             sleep(5)
+        else: #try 시도 후, 오류가 없으면 실행
+            break
 
     if response.status_code == 200:
         idx = 0
@@ -179,50 +179,52 @@ def scanGall_pc(gid): #selenium을 이용하지 않고 한번에 볼 수 있는 
             lis.append(f)
 
         #print("게시글 개수: " + str(len(lis)-1) + '\n')
-        posts = list(post() for i in range(len(lis))) #equal to [ post() for i in range(30) ]
+        posts = list(post() for i in range(len(lis)))
         
         #< 게시글 정보 추출
         for li in lis:
-            #try: 
-            title = li.select_one('td.gall_tit > a:nth-child(1)').get_text()
-            nickname = li.select_one("td.gall_writer").attrs['data-nick']
-            id = li.select_one("td.gall_writer").attrs['data-uid']
-            if len(id) == 0:
-                id = li.select_one("td.gall_writer").attrs['data-ip']
-            if li.select_one("td.gall_tit > a:nth-child(2) > span.reply_num") is None:
-                cmnt = '0'
-            else: 
-                cmnt = str(li.select_one("td.gall_tit > a:nth-child(2) > span.reply_num").get_text())[1:-1]
-            url = str("https://gall.dcinside.com" + li.select_one("td.gall_tit > a:nth-child(1)").attrs['href'])
-            if mgallery == True:
-                pnum = int(url[50+len(gid)+4:-20])
-            else:
-                pnum = int(url[41+len(gid)+4:-20])
-            isImg = False
-            isReco = False
-            if li.select_one("td.gall_tit > a:nth-child(1) > em.icon_pic") != None:
-                isImg = True
-            if li.select_one("td.gall_tit > a:nth-child(1) > em.icon_recomimg") != None:
-                isImg = True
-                isReco = True
-            if li.select_one("td.gall_tit > a:nth-child(1) > em.icon_recomtxt") != None:
-                isReco = True
-            
-            """posts = [post(idx, pnum, url, title, nickname, id, cmnt, isImg, None)]
-            idx += 1"""
+            try: 
+                title = li.select_one('td.gall_tit > a:nth-child(1)').get_text()
+                nickname = li.select_one("td.gall_writer").attrs['data-nick']
+                id = li.select_one("td.gall_writer").attrs['data-uid']
+                if len(id) == 0:
+                    id = li.select_one("td.gall_writer").attrs['data-ip']
+                if li.select_one("td.gall_tit > a:nth-child(2) > span.reply_num") is None:
+                    cmnt = '0'
+                else: 
+                    cmnt = str(li.select_one("td.gall_tit > a:nth-child(2) > span.reply_num").get_text())[1:-1]
+                url = str("https://gall.dcinside.com" + li.select_one("td.gall_tit > a:nth-child(1)").attrs['href'])
+                if mgallery == True:
+                    pnum = int(url[50+len(gid)+4:-20])
+                else:
+                    pnum = int(url[41+len(gid)+4:-20])
+                isImg = False
+                isReco = False
+                if li.select_one("td.gall_tit > a:nth-child(1) > em.icon_pic") != None:
+                    isImg = True
+                if li.select_one("td.gall_tit > a:nth-child(1) > em.icon_recomimg") != None:
+                    isImg = True
+                    isReco = True
+                if li.select_one("td.gall_tit > a:nth-child(1) > em.icon_recomtxt") != None:
+                    isReco = True
+                
+                """posts = [post(idx, pnum, url, title, nickname, id, cmnt, isImg, None)]
+                idx += 1"""
 
-            """print('Title: ' + title)
-            print('Author(ID): ' + nickname + '(' + id + ')')
-            print('Image: ' + str(isImg))
-            print('Comment: ' + str(cmnt))
-            print('URL: ' + url)
-            print('PNUM: ' + str(pnum))
-            print('--------------------------------------------------', end='\n')"""
-            #print(end='\n') is equal to print()
-            """except:
-                print("for li in lis에서 except 실행됨")
-                continue"""
-            #print(idx)
+                """print('Title: ' + title)
+                print('Author(ID): ' + nickname + '(' + id + ')')
+                print('Image: ' + str(isImg))
+                print('Comment: ' + str(cmnt))
+                print('URL: ' + url)
+                print('PNUM: ' + str(pnum))
+                print('--------------------------------------------------', end='\n')"""
+                #print(end='\n') is equal to print()
+                """except:
+                    print("for li in lis에서 except 실행됨")
+                    continue"""
+                #print(idx)
+            except:
+                continue
             posts[idx] = post(idx, pnum, url, title, nickname, id, cmnt, isImg, isReco)
             idx += 1
         """
@@ -272,6 +274,9 @@ def printTime():
 old_posts = list()
 def scanDiff(new_posts): 
     #scanDiff()의 인자에 posts 리스트를 넣으면 new_posts와 old_posts를 비교하여 변동이 있는 post만 pnum으로 반환한다.
+    new_posts.sort(reverse=True, key = lambda object: object.pnum)
+    """한꺼번에 많은 게시글이 올라오면 pnum이 뒤섞이는 경우가 있기에(디시 측 정렬 문제), new_posts를 pnum 순서대로 정렬해야 한다."""
+
     global old_posts
     if len(old_posts) == 0: #initialize
         """if f_DBG == True:
@@ -337,7 +342,7 @@ def scanDiff(new_posts):
                         if f_DBG == True:
                             printTime()
                             old_posts[j].showSimple()
-                            print('\033[41;1;37m' + "[글삭]" + '\033[0m', "게시글이 삭제되었어요.\n")
+                            print('\033[41;1;37m' + "[글삭]" + '\033[0m', "게시글이 삭제되었어요.\n\a")
                         deleted.append(old_posts[j].pnum)
             elif new_posts[i].pnum > old_posts[0].pnum:
                 if f_DBG == True:
