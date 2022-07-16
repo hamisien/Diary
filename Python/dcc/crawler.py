@@ -1,6 +1,5 @@
-from audioop import reverse
-from lib2to3.pgen2.token import COMMENT
-from unittest import defaultTestLoader
+from lib2to3.refactor import get_all_fix_names
+from urllib import response
 import requests
 from bs4 import BeautifulSoup
 #import pymysql #RPi에서 지원하지 않는 것 같아요.
@@ -159,10 +158,13 @@ def scanGall_pc(gid): #selenium을 이용하지 않고 한번에 볼 수 있는 
     global mgallery
     while True:
         try:
-            response = requests.get('https://gall.dcinside.com/board/lists/?id='+gid+"&list_num=100", headers=header)
-            if len(response.text) < 120 + len(gid) or mgallery == True:
-                mgallery = True
+            if mgallery == True:
                 response = requests.get('https://gall.dcinside.com/mgallery/board/lists/?id='+gid+"&list_num=100", headers=header)
+            else:
+                response = requests.get('https://gall.dcinside.com/board/lists/?id='+gid+"&list_num=100", headers=header)
+                if len(response.text) < 120 + len(gid):
+                    mgallery = True
+                    response = requests.get('https://gall.dcinside.com/mgallery/board/lists/?id='+gid+"&list_num=100", headers=header)
         except:
             print("Connection refused, waiting a few seconds..")
             sleep(5)
@@ -273,7 +275,7 @@ def printTime():
     print("\033[1m< %04d/%02d/%02d %02d:%02d:%02d >\033[0m" % (now_time.tm_year, now_time.tm_mon, now_time.tm_mday, now_time.tm_hour, now_time.tm_min, now_time.tm_sec))
 
 
-old_posts = list()
+old_posts = list(); newest_pnum = int()
 def scanDiff(new_posts): 
     #scanDiff()의 인자에 posts 리스트를 넣으면 new_posts와 old_posts를 비교하여 변동이 있는 post만 pnum으로 반환한다.
     new_posts.sort(reverse=True, key = lambda object: object.pnum)
@@ -289,9 +291,13 @@ def scanDiff(new_posts):
         """if f_DBG == True:
             printDbg("scanDiff()가 initialize 된 이후에 호출되었습니다.")"""
 
+        newpost = list()
         reco = list()
         cmnt = list()
         deleted = list()
+
+        global newest_pnum
+        newest_pnum = new_posts[0].pnum #가장 최근 글의 pnum
 
         for i in range(len(new_posts)):
             ### 1st way to scan deleted post..(1) ###
@@ -351,6 +357,7 @@ def scanDiff(new_posts):
                     printTime()
                     new_posts[i].showSimple()
                     print('\033[102;1;30m' + "[새 글]" + '\033[0m', "새 글이 등록되었어요.\n")
+                newpost.append(new_posts[i].pnum)
             else:
                 continue
 
@@ -364,10 +371,60 @@ def scanDiff(new_posts):
             pass"""
 
         old_posts = deepcopy(new_posts)
-        return reco, cmnt, deleted
+        return newpost, reco, cmnt, deleted
 
 
-def viewPost(pnum):
+def viewPost(gallname, pnum):
+    ua = 'Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Mobile Safari/537.36'
+    header = {'User-Agent': ua}
+    while True:
+        try:
+            response = requests.get('https://m.dcinside.com/board/' + gallname + '/' + str(pnum), headers=header)
+            #headers는 필수다.
+        except:
+            print("Connection refused, waiting a few seconds..")
+            sleep(5)
+        else: #try 시도 후, 오류가 없으면 실행
+            break
+
+    if response.status_code == 200:
+        html = response.text
+        soup = BeautifulSoup(html, 'html.parser')
+        soup.select('body > div.container > div > div > section:nth-child(3)')
+
+        title = soup.select_one('span.tit')
+        nickname = soup.select_one('div.btm > ul.ginfo2 > li:nth-child(1)').get_text()
+        if soup.select_one('div.btm > ul.ginfo2 > li:nth-child(1) > span.gonick') != None:
+            isGonic = True
+            isNogonic = False
+        elif soup.select_one('div.btm > ul.ginfo2 > li:nth-child(1) > span.nogonick') != None:
+            isGonic = False
+            isNogonic = True
+        else:
+            isGonic = False
+            isNogonic = False
+        date = soup.select_one('div.btm > ul.ginfo2 > li:nth-child(2)').get_text()
+        if mgallery == True:
+            url = "https://gall.dcinside.com/mgallery/board/view/?id=" + gallname + "&no=" + str(pnum)
+        else:
+            url = "https://gall.dcinside.com/board/view/?id=" + gallname + "&no=" + str(pnum)
+
+        print("viewPost.title = " + title)
+        print("viewPost.nickname = " + nickname)
+        print("isGonic/isNogonic = " + isGonic + ' / ' + isNogonic)
+        print("date = " + date)
+        print("url = " + url)
+        
+    else:
+        if response.status_code >= 400 and response.status_code < 500:
+            print("HTTP requests Err: " + str(response.status_code))
+            printErr("check the GALLNAME")
+        else:
+            print("HTTP requests Err: " + str(response.status_code))
+            quit()
+
+
+def sendSql():
     pass
 
 
@@ -375,19 +432,20 @@ def main(gallname):
     while 1:
         posts = scanGall_pc(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
         scanResult = scanDiff(posts)
-        if scanResult != -1 and len(scanResult[0]) + len(scanResult[1]) + len(scanResult[2]) != 0:
-            print("Gallery: " + gallname + "\nRecommend: " + str(scanResult[0]) + "\nComment: " + str(scanResult[1]) + "\nDeleted: " + str(scanResult[2]), end="\n\n")
+        if scanResult != -1 and len(scanResult[0]) + len(scanResult[1]) + len(scanResult[2]) + len(scanResult[3]) != 0:
+            print("Gallery: " + gallname + "\nNew Posts: " + str(scanResult[0]) + "\nRecommend: " + str(scanResult[1]) + "\nComment: " + str(scanResult[2]) + "\nDeleted: " + str(scanResult[3]) + "\nNewest pnum: " + str(newest_pnum), end="\n\n")
         #for i in range(len(posts)):
         #    posts[i].showSimple()
         #reco, cmnt, deleted = scanDiff(posts)
         #print(reco, cmnt, deleted)
-        sleep(2)
 
         """
         for i in range(len(posts)):
             posts[i].showSimple()
         #posts[i].showInfo()
         """
+        
+        sleep(2)
 
 
 
