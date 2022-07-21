@@ -1,5 +1,3 @@
-from lib2to3.refactor import get_all_fix_names
-from urllib import response
 import requests
 from bs4 import BeautifulSoup
 #import pymysql #RPi에서 지원하지 않는 것 같아요.
@@ -21,6 +19,12 @@ class post:
     cmnt = int() #int()에서 str()로 바꿈.. 이유는 scanGall_pc()에서 보이스리플이 달리면 "4/1" 형식으로 표시되어 int()에서 오류가 발생함
     isImg = bool()
     isReco = bool()
+    #----------------------#
+    headtext = str()
+    isGonic = bool()
+    isNogonic = bool()
+    date = str()
+    url = str()
 
     def __init__(self, idx=0, pnum=0, url='', title='', nick='', id='', cmnt=0, isImg=False, isReco=False, contents=''):
         self.idx = idx
@@ -91,7 +95,7 @@ def scanGall(gid):
     if response.status_code == 200:
         idx = 0
         html = response.text
-        soup = BeautifulSoup(html, 'html.parser')
+        soup = BeautifulSoup(html, 'lxml')
         lis = soup.select('ul.gall-detail-lst > li')
         #print("게시글 개수: " + str(len(lis)-1) + '\n')
         posts = list(post() for i in range(len(lis)-1))
@@ -174,7 +178,7 @@ def scanGall_pc(gid): #selenium을 이용하지 않고 한번에 볼 수 있는 
     if response.status_code == 200:
         idx = 0
         html = response.text
-        soup = BeautifulSoup(html, 'html.parser')
+        soup = BeautifulSoup(html, 'lxml')
         filt = soup.select('table.gall_list > tbody > tr.us-post')
         lis = list()
         for f in filt:
@@ -375,12 +379,17 @@ def scanDiff(new_posts):
 
 
 def viewPost(gallname, pnum):
-    ua = 'Mozilla/5.0 (Linux; Android 10; Pixel 4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Mobile Safari/537.36'
+    ua = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.96 Safari/537.36'
     header = {'User-Agent': ua}
+    global mgallery
+
     while True:
         try:
-            response = requests.get('https://m.dcinside.com/board/' + gallname + '/' + str(pnum), headers=header)
-            #headers는 필수다.
+            if mgallery == True: #PC UA로 작업시, viewPost 호출 이전에 scanGall_pc가 먼저 호출되지 않으면 mgallery가 기본값인 False로 작동하여 gallname이 마이너갤러리인 경우 오류가 발생함.
+                response = requests.get('https://gall.dcinside.com/mgallery/board/view/?id=' + gallname + '&no=' + str(pnum), headers=header)
+                #headers는 필수다.
+            else:
+                response = requests.get('https://gall.dcinside.com/board/view/?id=' + gallname + '&no=' + str(pnum), headers=header)
         except:
             print("Connection refused, waiting a few seconds..")
             sleep(5)
@@ -389,31 +398,56 @@ def viewPost(gallname, pnum):
 
     if response.status_code == 200:
         html = response.text
-        soup = BeautifulSoup(html, 'html.parser')
-        soup.select('body > div.container > div > div > section:nth-child(3)')
+        soup = BeautifulSoup(html, 'lxml')
+        soup.select('#container > section > article:nth-child(3)')
 
-        title = soup.select_one('span.tit')
-        nickname = soup.select_one('div.btm > ul.ginfo2 > li:nth-child(1)').get_text()
-        if soup.select_one('div.btm > ul.ginfo2 > li:nth-child(1) > span.gonick') != None:
-            isGonic = True
-            isNogonic = False
-        elif soup.select_one('div.btm > ul.ginfo2 > li:nth-child(1) > span.nogonick') != None:
-            isGonic = False
-            isNogonic = True
+        headtext = soup.select_one('div.view_content_wrap > header > div > h3 > span.title_headtext').get_text()
+        title = soup.select_one('div.view_content_wrap > header > div > h3 > span.title_subject').get_text()
+        nickname = soup.select_one('div.view_content_wrap > header > div > div.gall_writer').attrs['data-nick']
+        if len(soup.select_one('div.view_content_wrap > header > div > div.gall_writer').attrs['data-uid']) == 0:
+            id = soup.select_one('div.view_content_wrap > header > div > div.gall_writer').attrs['data-ip']
+        else:
+            id = soup.select_one('div.view_content_wrap > header > div > div.gall_writer').attrs['data-uid']
+        date = soup.find('span', {'class':'gall_date'}).get_text()
+        cmnt = str(soup.find('a', {'href':'#focus_cmt'}).get_text())[3:]
+        contents = soup.select_one('div.view_content_wrap > div.gallview_contents > div.inner > div.writing_view_box > div.write_div')
+        cmnt_contents = str()
+
+        if soup.select_one('div.view_content_wrap > header > div > div > div.fl > a.writer_nikcon > img') is not None:
+            if str(soup.select_one('div.view_content_wrap > header > div > div > div.fl > a.writer_nikcon > img').attrs['src'])[41:] == "fix_nik.gif":
+                isGonic = True
+                isNogonic = False
+            elif str(soup.select_one('div.view_content_wrap > header > div > div > div.fl > a.writer_nikcon > img').attrs['src'])[41:] == "nik.gif":
+                isGonic = False
+                isNogonic = True
         else:
             isGonic = False
             isNogonic = False
-        date = soup.select_one('div.btm > ul.ginfo2 > li:nth-child(2)').get_text()
+
         if mgallery == True:
             url = "https://gall.dcinside.com/mgallery/board/view/?id=" + gallname + "&no=" + str(pnum)
         else:
             url = "https://gall.dcinside.com/board/view/?id=" + gallname + "&no=" + str(pnum)
 
+        print("viewPost.headtext = " + headtext)
         print("viewPost.title = " + title)
         print("viewPost.nickname = " + nickname)
-        print("isGonic/isNogonic = " + isGonic + ' / ' + isNogonic)
-        print("date = " + date)
-        print("url = " + url)
+        print("viewPost.id = " + id)
+        print("viewPost.isGonic/isNogonic = " + str(isGonic) + '/' + str(isNogonic))
+        print("viewPost.date = " + date)
+        print("viewPost.url = " + url)
+        print("viewPost.cmnt = " + cmnt)
+        #print("viewPost.contents_before = " + str(contents) + "\n")
+
+        #print("\nfind.all: " + str(contents.find_all('img', {'onerror':'reload_img(this)'})))
+        tag_img = contents.find_all('img', {'onerror':'reload_img(this)'})
+        print(tag_img)
+        for t in tag_img:
+            t.attrs['src'] = str(t.attrs['onclick'][18:-2]).split(',')[0][1:-1]
+            #onclick 옵션이 없는 이미지의 경우 오류가 발생함.
+        #일반 이미지에는 대응하지만 video 태그의 gif 이미지는 따로 작업해야 함.
+
+        print("viewPost.contents_after = " + str(contents))
         
     else:
         if response.status_code >= 400 and response.status_code < 500:
@@ -429,23 +463,24 @@ def sendSql():
 
 
 def main(gallname):
-    while 1:
+    viewPost(gallname, 4800234)
+
+
+    """while 1:
         posts = scanGall_pc(gallname) #scanGall()의 지역변수인 posts를 return받아 main()의 새로운 posts 객체에 대입
         scanResult = scanDiff(posts)
-        if scanResult != -1 and len(scanResult[0]) + len(scanResult[1]) + len(scanResult[2]) + len(scanResult[3]) != 0:
-            print("Gallery: " + gallname + "\nNew Posts: " + str(scanResult[0]) + "\nRecommend: " + str(scanResult[1]) + "\nComment: " + str(scanResult[2]) + "\nDeleted: " + str(scanResult[3]) + "\nNewest pnum: " + str(newest_pnum), end="\n\n")
-        #for i in range(len(posts)):
-        #    posts[i].showSimple()
-        #reco, cmnt, deleted = scanDiff(posts)
-        #print(reco, cmnt, deleted)
+        if f_DBG == True:
+            if scanResult != -1 and len(scanResult[0]) + len(scanResult[1]) + len(scanResult[2]) + len(scanResult[3]) != 0:
+                print("Gallery: " + gallname + "\nNew Posts: " + str(scanResult[0]) + "\nRecommend: " + str(scanResult[1]) + 
+                "\nComment: " + str(scanResult[2]) + "\nDeleted: " + str(scanResult[3]) + "\nNewest pnum: " + str(newest_pnum), end="\n\n")
 
         """
-        for i in range(len(posts)):
-            posts[i].showSimple()
-        #posts[i].showInfo()
-        """
+    """for i in range(len(posts)):
+        posts[i].showSimple()
+        #posts[i].showInfo()"""
+    """
         
-        sleep(2)
+        sleep(2)"""
 
 
 
