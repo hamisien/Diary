@@ -149,10 +149,10 @@ def scanGall(gid):
         
     else:
         if response.status_code >= 400 and response.status_code < 500:
-            print("HTTP requests Err: " + str(response.status_code))
+            print("HTTP requests error code: " + str(response.status_code))
             printErr("check the GALLNAME")
         else:
-            print("HTTP requests Err: " + str(response.status_code))
+            print("HTTP requests error code: " + str(response.status_code))
             quit()
 
 mgallery = False
@@ -250,10 +250,10 @@ def scanGall_pc(gid): #selenium을 이용하지 않고 한번에 볼 수 있는 
         
     else:
         if response.status_code >= 400 and response.status_code < 500:
-            print("HTTP requests Err: " + str(response.status_code))
+            print("HTTP requests error code: " + str(response.status_code))
             printErr("check the GALLNAME")
         else:
-            print("HTTP requests Err: " + str(response.status_code))
+            print("HTTP requests error code: " + str(response.status_code))
             quit()
 
 
@@ -411,7 +411,7 @@ def viewPost(gallname, pnum):
         date = soup.find('span', {'class':'gall_date'}).get_text()
         cmnt = str(soup.find('a', {'href':'#focus_cmt'}).get_text())[3:]
         contents = soup.select_one('div.view_content_wrap > div.gallview_contents > div.inner > div.writing_view_box > div.write_div')
-        cmnt_contents = str()
+        cmnt_contents = str() #Comment 클래스를 하나 만들어서 가자. Post처럼.
 
         if soup.select_one('div.view_content_wrap > header > div > div > div.fl > a.writer_nikcon > img') is not None:
             if str(soup.select_one('div.view_content_wrap > header > div > div > div.fl > a.writer_nikcon > img').attrs['src'])[41:] == "fix_nik.gif":
@@ -441,21 +441,24 @@ def viewPost(gallname, pnum):
 
         #print("\nfind.all: " + str(contents.find_all('img', {'onerror':'reload_img(this)'})))
         tag_img = contents.find_all('img', {'onerror':'reload_img(this)'})
-        print(tag_img)
         for t in tag_img:
-            t.attrs['src'] = str(t.attrs['onclick'][18:-2]).split(',')[0][1:-1]
+            #t.attrs['src'] = str(t.attrs['onclick'][18:-2]).split(',')[0][1:-1]
             #onclick 옵션이 없는 이미지의 경우 오류가 발생함.
+            t.attrs['src'] = "https://image.dcinside.com/viewimagePop.php?no=" + str(t.attrs['src'])[str(t.attrs['src']).index("no=")+3:]
         #일반 이미지에는 대응하지만 video 태그의 gif 이미지는 따로 작업해야 함.
+        tag_video = contents.find_all('video')
+        for t in tag_video:
+            t.attrs['src'] = t.attrs['data-src'] = "https://image.dcinside.com/viewimagePop.php?no=" + str(t.attrs['data-src'])[str(t.attrs['data-src']).index("no=")+3:]
 
         print("viewPost.contents_after = " + str(contents))
         
     else:
         if response.status_code >= 400 and response.status_code < 500:
-            print("HTTP requests Err: " + str(response.status_code))
-            printErr("check the GALLNAME")
+            print("[viewPost] - The post does not exist or has been deleted.")
+            return 0
         else:
-            print("HTTP requests Err: " + str(response.status_code))
-            quit()
+            print("HTTP requests error code: " + str(response.status_code))
+            return -1
 
 
 def sendSql():
@@ -463,7 +466,7 @@ def sendSql():
 
 
 def main(gallname):
-    viewPost(gallname, 4800234)
+    viewPost(gallname, 6000000)
 
 
     """while 1:
